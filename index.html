@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>무주 학원지도</title>
+
+<!-- 실제 지도 라이브러리 -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: #f4f7f3;
+}
+
+/* 지도 전체 화면 */
+#map {
+    width: 100%;
+    height: 100vh;
+    z-index: 1;
+}
+
+/* 상단 제목 */
+.header {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    background: white;
+    padding: 13px 25px;
+    border-radius: 15px;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.15);
+    text-align: center;
+    width: max-content;
+    max-width: 90%;
+}
+
+.header h1 {
+    font-size: 21px;
+    color: #263c32;
+}
+
+.header p {
+    font-size: 12px;
+    color: #888;
+    margin-top: 4px;
+}
+
+/* 초록색 별 마커 */
+.star-marker {
+    background: #00c853;
+    border: 3px solid white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 19px;
+    font-weight: bold;
+    box-shadow: 0 2px 7px rgba(0,0,0,0.3);
+}
+
+/* 학원 정보 팝업 */
+.leaflet-popup-content-wrapper {
+    border-radius: 13px;
+}
+
+.leaflet-popup-content {
+    margin: 15px 18px;
+    min-width: 190px;
+    font-family: sans-serif;
+}
+
+.popup-title {
+    font-size: 17px;
+    font-weight: bold;
+    color: #263c32;
+    margin-bottom: 10px;
+}
+
+.popup-label {
+    font-size: 12px;
+    color: #00a94f;
+    font-weight: bold;
+    margin-bottom: 3px;
+}
+
+.popup-info {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 9px;
+}
+
+.notice {
+    position: absolute;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    background: white;
+    padding: 10px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: #666;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+    white-space: nowrap;
+    max-width: 92%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+</style>
+</head>
+
+<body>
+
+<!-- 상단 제목 -->
+<div class="header">
+    <h1>📍 무주 학원지도</h1>
+    <p>우리 동네 학원 정보를 한눈에!</p>
+</div>
+
+<!-- 지도 -->
+<div id="map"></div>
+
+<div class="notice" id="notice">
+    무주 학원 정보를 불러오는 중입니다...
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+// 1. 지도 시작 위치 (무주군청 부근 중심)
+const map = L.map('map').setView([36.0075, 127.6605], 15);
+
+// 2. 실제 지도 연결
+L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+    }
+).addTo(map);
+
+// 3. 학원 정보 및 좌표 직접 입력
+const academies = [
+    {
+        name: "박쌤학원",
+        address: "전북특별자치도 무주군 무주읍 향학로 60-1",
+        subject: "영어, 수학",
+        lat: 36.0081, lng: 127.6592
+    },
+    {
+        name: "예닮학원",
+        address: "전북특별자치도 무주군 무주읍 신교로 49, 부영아파트 상가 201호",
+        subject: "영어",
+        lat: 36.0062, lng: 127.6580
+    },
+    {
+        name: "아이엠영어",
+        address: "전북특별자치도 무주군 무주읍 신교로3길 10",
+        subject: "영어",
+        lat: 36.0055, lng: 127.6572
+    },
+    {
+        name: "하이클래스",
+        address: "전북특별자치도 무주군 무주읍 신교로 49, 상가동 202호",
+        subject: "수학, 과학",
+        lat: 36.0062, lng: 127.6580
+    },
+    {
+        name: "올림수학전문학원",
+        address: "전북특별자치도 무주군 무주읍 교동길 6",
+        subject: "수학",
+        lat: 36.0090, lng: 127.6620
+    },
+    {
+        name: "비전",
+        address: "전북특별자치도 무주군 무주읍 한수로 18",
+        subject: "수학",
+        lat: 36.0040, lng: 127.6610
+    },
+    {
+        name: "GNB",
+        address: "전북특별자치도 무주군 무주읍 한수로1길 4",
+        subject: "영어",
+        lat: 36.0035, lng: 127.6615
+    },
+    {
+        name: "올투",
+        address: "전북특별자치도 무주군 무주읍 한수로 27 드림빌리지 102호",
+        subject: "영어",
+        lat: 36.0045, lng: 127.6602
+    },
+    {
+        name: "스마트해법영어",
+        address: "전북특별자치도 무주군 무주읍 단천로5길 14",
+        subject: "영어",
+        lat: 36.0020, lng: 127.6595
+    },
+    {
+        name: "레이첼영어교습소",
+        address: "전북특별자치도 무주군 무주읍 향한로 65",
+        subject: "영어",
+        lat: 36.0070, lng: 127.6565
+    },
+    {
+        name: "위니드",
+        address: "전북특별자치도 무주군 무주읍 향한로2길 7",
+        subject: "수학",
+        lat: 36.0068, lng: 127.6570
+    },
+    {
+        name: "잉글리시아이",
+        address: "전북특별자치도 무주군 무주읍 향학로 38",
+        subject: "영어",
+        lat: 36.0078, lng: 127.6588
+    }
+];
+
+// 4. 초록색 별 모양 마커 아이콘 설정
+const starIcon = L.divIcon({
+    className: '',
+    html: '<div class="star-marker">★</div>',
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -18]
+});
+
+// 5. 지점에 마커 바로 표시하기 (네트워크 검색 제거로 로딩 즉시 완료)
+const bounds = [];
+
+academies.forEach(academy => {
+    const popup = `
+        <div class="popup-title">${academy.name}</div>
+        <div class="popup-label">교육 분야</div>
+        <div class="popup-info">${academy.subject}</div>
+        <div class="popup-label">주소</div>
+        <div class="popup-info">${academy.address}</div>
+    `;
+
+    const marker = L.marker([academy.lat, academy.lng], { icon: starIcon }).addTo(map);
+    marker.bindPopup(popup);
+
+    bounds.push([academy.lat, academy.lng]);
+});
+
+// 모든 마커가 한눈에 보이도록 지도 범위 조정
+if (bounds.length > 0) {
+    map.fitBounds(bounds, {
+        padding: [55, 55],
+        maxZoom: 16
+    });
+}
+
+document.getElementById('notice').textContent = `무주 학원 ${academies.length}곳의 위치를 표시했습니다. 마커를 눌러보세요!`;
+
+</script>
+</body>
+</html>
